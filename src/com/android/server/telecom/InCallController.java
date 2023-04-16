@@ -48,6 +48,7 @@ import android.os.Trace;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.permission.PermissionManager;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.telecom.CallAudioState;
@@ -107,11 +108,7 @@ public class InCallController extends CallsManagerListenerBase implements
         mAnomalyReporter = mAnomalyReporterAdapter;
     }
 
-    private static final long[] INCALL_VIBRATION_PATTERN = {
-            100,
-            200,
-            0,
-    };
+    private Vibrator mVibrator;
 
     public class InCallServiceConnection {
         /**
@@ -1530,10 +1527,10 @@ public class InCallController extends CallsManagerListenerBase implements
             Settings.System.INCALL_FEEDBACK_VIBRATE, 0, UserHandle.USER_CURRENT) == 1;
 
         if (oldState == CallState.DIALING && newState == CallState.ACTIVE && vibrateOnConnect) {
-            vibrate(INCALL_VIBRATION_PATTERN);
+            performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_CLICK));
         } else if (oldState == CallState.ACTIVE && newState == CallState.DISCONNECTED
                 && vibrateOnDisconnect) {
-            vibrate(INCALL_VIBRATION_PATTERN);
+            performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_DOUBLE_CLICK));
         }
         updateCall(call);
     }
@@ -1905,6 +1902,9 @@ public class InCallController extends CallsManagerListenerBase implements
         CarSwappingInCallServiceConnection inCallServiceConnection =
                 mInCallServiceConnections.get(userFromCall);
         inCallServiceConnection.chooseInitialInCallService(shouldUseCarModeUI());
+        if (mVibrator == null) {
+            mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
+        }
 
         // Actually try binding to the UI InCallService.
         if (inCallServiceConnection.connect(call) ==
@@ -2884,6 +2884,7 @@ public class InCallController extends CallsManagerListenerBase implements
         call.maybeOnInCallServiceTrackingChanged(isAdd, hasUi);
     }
 
+<<<<<<< HEAD
     private UserHandle getUserFromCall(Call call) {
         // Call may never be specified, so we can fall back to using the CallManager current user.
         if (call == null) {
@@ -2905,7 +2906,9 @@ public class InCallController extends CallsManagerListenerBase implements
         }
     }
 
-    public void vibrate(long[] pattern) {
-        ((Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(pattern, -1);
+    public void performHapticFeedback(VibrationEffect effect) {
+        if (mVibrator.hasVibrator() && mVibrator != null) {
+            mVibrator.vibrate(effect);
+        }
     }
 }
